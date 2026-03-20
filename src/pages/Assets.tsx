@@ -779,7 +779,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
             setError('Fon bulunamadı')
           }
         } else if (activeTab === 'stocks') {
-          // Hisse - Yahoo Finance'den çek
+          // Hisse - Yahoo Finance'den çek (fiyat + temettü)
           const url = `http://localhost:8000/api/v1/stocks/${form.symbol.toUpperCase()}`
           console.log('Fetching Yahoo Finance:', url)
           
@@ -787,11 +787,14 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
           const data = await response.json()
           
           if (data.price) {
-            console.log(`Found stock: ${data.symbol} = $${data.price}`)
+            console.log(`Found stock: ${data.symbol} = $${data.price}, Div: $${data.dividendPerShare} (${data.dividendYield}%)`)
             setForm(prev => ({
               ...prev,
               name: data.name || prev.name,
               price: data.price.toFixed(6),
+              dividendPerShare: data.dividendPerShare ? data.dividendPerShare.toFixed(4) : '0',
+              dividendYield: data.dividendYield ? data.dividendYield.toFixed(2) : '0',
+              paymentFrequency: data.paymentFrequency || 'quarterly',
               category: activeTab
             }))
           } else {
