@@ -15,6 +15,7 @@ import {
   DollarSign,
   Clock,
   Target,
+  Coins,
   Moon,
   Sun
 } from 'lucide-react'
@@ -24,6 +25,7 @@ import Assets from './pages/Assets'
 import Transactions from './pages/Transactions'
 import Analysis from './pages/Analysis'
 import Goals from './pages/Goals'
+import Dividends from './pages/Dividends'
 import Alerts from './pages/Alerts'
 import Reports from './pages/Reports'
 import SettingsPage from './pages/Settings'
@@ -82,6 +84,8 @@ function App() {
         return <Assets />
       case 'transactions':
         return <Transactions />
+      case 'dividends':
+        return <Dividends assets={assets} />
       case 'goals':
         return <Goals />
       case 'analysis':
@@ -114,6 +118,7 @@ function App() {
               <NavButton icon={LayoutGrid} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
               <NavButton icon={Wallet} label="Varlıklar" active={activeTab === 'assets'} onClick={() => setActiveTab('assets')} />
               <NavButton icon={TrendingUp} label="İşlemler" active={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
+              <NavButton icon={Coins} label="Temettü" active={activeTab === 'dividends'} onClick={() => setActiveTab('dividends')} />
               <NavButton icon={Target} label="Hedefler" active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} />
               <NavButton icon={PieChartIcon} label="Analiz" active={activeTab === 'analysis'} onClick={() => setActiveTab('analysis')} />
               <NavButton icon={Bell} label="Bildirimler" active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} />
