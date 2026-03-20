@@ -64,6 +64,7 @@ export default function Assets() {
   const [assets, setAssets] = useState(() => loadAssets())
   const [editingAsset, setEditingAsset] = useState<any | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Assets değiştiğinde kaydet
@@ -87,6 +88,11 @@ export default function Assets() {
   const handleSaveEdit = (updatedAsset: any) => {
     updateAssets(assets.map(a => a.id === updatedAsset.id ? updatedAsset : a))
     setEditingAsset(null)
+  }
+
+  const handleAdd = (newAsset: any) => {
+    updateAssets([...assets, newAsset])
+    setShowAddModal(false)
   }
 
   const parseCSV = (content: string): ImportResult => {
@@ -217,7 +223,10 @@ export default function Assets() {
             <Upload className="w-3.5 h-3.5" />
             <span>CSV</span>
           </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-xs">
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-xs"
+          >
             <Plus className="w-3.5 h-3.5" />
             <span>Ekle</span>
           </button>
@@ -362,6 +371,11 @@ export default function Assets() {
       {/* Edit Modal */}
       {editingAsset && (
         <EditModal asset={editingAsset} onSave={handleSaveEdit} onCancel={() => setEditingAsset(null)} />
+      )}
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <AddAssetModal onSave={handleAdd} onCancel={() => setShowAddModal(false)} />
       )}
 
       {/* Import Modal */}
@@ -600,6 +614,140 @@ function EditModal({ asset, onSave, onCancel }: { asset: any, onSave: (a: any) =
             </button>
             <button type="submit" className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm">
               Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onCancel: () => void }) {
+  const [form, setForm] = useState({
+    symbol: '',
+    name: '',
+    amount: '',
+    price: '',
+    value: '',
+    change: '0',
+    category: 'stocks'
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const amount = parseFloat(form.amount) || 0
+    const price = parseFloat(form.price) || 0
+    const value = parseFloat(form.value) || (amount * price)
+    
+    onSave({
+      id: Date.now(),
+      symbol: form.symbol.toUpperCase(),
+      name: form.name,
+      amount,
+      price,
+      value,
+      costBasis: amount * price,
+      category: form.category,
+      change: parseFloat(form.change)
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-5 shadow-xl">
+        <h3 className="text-base font-semibold mb-4">Yeni Varlık Ekle</h3>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Sembol *</label>
+              <input
+                value={form.symbol}
+                onChange={(e) => setForm({ ...form, symbol: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="AAPL"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">İsim *</label>
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Apple Inc."
+                required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Miktar</label>
+              <input
+                type="number"
+                step="0.0001"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="10"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Fiyat ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="150.00"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Değer ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={form.value}
+                onChange={(e) => setForm({ ...form, value: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="1500"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Değişim (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={form.change}
+                onChange={(e) => setForm({ ...form, change: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="stocks">Hisse</option>
+                <option value="crypto">Kripto</option>
+                <option value="realestate">Gayrimenkul</option>
+                <option value="cash">Nakit</option>
+                <option value="etf">ETF/Fon</option>
+                <option value="emk">BES (EMK)</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-3">
+            <button type="button" onClick={onCancel} className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm">
+              İptal
+            </button>
+            <button type="submit" className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm">
+              Ekle
             </button>
           </div>
         </form>
