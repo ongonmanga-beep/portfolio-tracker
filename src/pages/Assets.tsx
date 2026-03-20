@@ -641,8 +641,10 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
   // USD/TRY kuru (güncel kur ~35.5)
   const USD_TRY_RATE = 35.5
 
-  // Sembol değişince API'den son fiyatı çek
+  // Sembol değişince API'den son fiyatı çek (EMK ve YAT'de ara)
   useEffect(() => {
+    const abortController = new AbortController()
+    
     const fetchPrice = async () => {
       if (form.symbol.length < 3) return
       
@@ -650,36 +652,62 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
       setError('')
       
       try {
-        const kind = form.category === 'emk' ? 'EMK' : 'YAT'
-        const response = await fetch(
-          `http://localhost:8080/api/v1/prices/${form.symbol.toUpperCase()}?start=2024-01-01&end=2026-12-31&kind=${kind}`
-        )
-        const data = await response.json()
+        // Önce seçili kategoride ara
+        const primaryKind = form.category === 'emk' ? 'EMK' : 'YAT'
+        const secondaryKind = form.category === 'emk' ? 'YAT' : 'EMK'
+        
+        // İlk kategori
+        let url = `http://localhost:8080/api/v1/prices/${form.symbol.toUpperCase()}?start=2024-01-01&end=2026-12-31&kind=${primaryKind}`
+        console.log('Fetching primary:', url)
+        
+        let response = await fetch(url, { signal: abortController.signal })
+        let data = await response.json()
+        console.log('Primary response:', data.data?.count || 0)
+        
+        // Bulunamadıysa ikinci kategoride dene
+        if (!data.data?.prices?.length) {
+          url = `http://localhost:8080/api/v1/prices/${form.symbol.toUpperCase()}?start=2024-01-01&end=2026-12-31&kind=${secondaryKind}`
+          console.log('Fetching secondary:', url)
+          
+          response = await fetch(url, { signal: abortController.signal })
+          data = await response.json()
+          console.log('Secondary response:', data.data?.count || 0)
+        }
         
         if (data.data && data.data.prices && data.data.prices.length > 0) {
           const latest = data.data.prices[0]
           // TRY'den USD'ye çevir
           const priceUSD = latest.price / USD_TRY_RATE
+          console.log('Price USD:', priceUSD)
           setForm(prev => ({
             ...prev,
             name: latest.title || prev.name,
             price: priceUSD.toFixed(6),
-            category: kind.toLowerCase()
+            category: primaryKind.toLowerCase()
           }))
         } else {
+          console.log('No prices found in either category')
           setError('Fon bulunamadı')
         }
-      } catch (err) {
-        setError('API hatası')
-        console.error('Failed to fetch price:', err)
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.log('Fetch aborted')
+          return
+        }
+        console.error('Fetch error:', err)
+        setError('API bağlantı hatası')
       } finally {
         setLoading(false)
+        console.log('Loading finished')
       }
     }
 
-    const debounceTimer = setTimeout(fetchPrice, 500)
-    return () => clearTimeout(debounceTimer)
-  }, [form.symbol, form.category])
+    const debounceTimer = setTimeout(fetchPrice, 800)
+    return () => {
+      clearTimeout(debounceTimer)
+      abortController.abort()
+    }
+  }, [form.symbol])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
