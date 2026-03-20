@@ -641,27 +641,45 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
   // USD/TRY kuru (güncel kur ~35.5)
   const USD_TRY_RATE = 35.5
 
-  // Bilinen fonlar için otomatik doldurma (TRY cinsinden)
-  const knownFunds: Record<string, { name: string, priceTRY: number, category: string }> = {
-    'AVR': { name: 'AGESA Teknoloji Sektörü Fonu', priceTRY: 0.375507, category: 'emk' },
-  }
-
-  // Sembol değişince bilinen fonları kontrol et
+  // Sembol değişince API'den son fiyatı çek
   useEffect(() => {
-    if (form.symbol.length >= 3) {
-      const known = knownFunds[form.symbol.toUpperCase()]
-      if (known) {
-        // TRY'den USD'ye çevir
-        const priceUSD = known.priceTRY / USD_TRY_RATE
-        setForm(prev => ({
-          ...prev,
-          name: known.name,
-          price: priceUSD.toFixed(6),
-          category: known.category
-        }))
+    const fetchPrice = async () => {
+      if (form.symbol.length < 3) return
+      
+      setLoading(true)
+      setError('')
+      
+      try {
+        const kind = form.category === 'emk' ? 'EMK' : 'YAT'
+        const response = await fetch(
+          `http://localhost:8080/api/v1/prices/${form.symbol.toUpperCase()}?start=2024-01-01&end=2026-12-31&kind=${kind}`
+        )
+        const data = await response.json()
+        
+        if (data.data && data.data.prices && data.data.prices.length > 0) {
+          const latest = data.data.prices[0]
+          // TRY'den USD'ye çevir
+          const priceUSD = latest.price / USD_TRY_RATE
+          setForm(prev => ({
+            ...prev,
+            name: latest.title || prev.name,
+            price: priceUSD.toFixed(6),
+            category: kind.toLowerCase()
+          }))
+        } else {
+          setError('Fon bulunamadı')
+        }
+      } catch (err) {
+        setError('API hatası')
+        console.error('Failed to fetch price:', err)
+      } finally {
+        setLoading(false)
       }
     }
-  }, [form.symbol])
+
+    const debounceTimer = setTimeout(fetchPrice, 500)
+    return () => clearTimeout(debounceTimer)
+  }, [form.symbol, form.category])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
