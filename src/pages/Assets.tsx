@@ -10,7 +10,19 @@ const assetCategories = [
   { id: 'etf', name: 'ETF/Fon' },
 ]
 
-const sampleAssets = []
+const sampleAssets = [
+  { 
+    id: 1, 
+    symbol: 'AVR', 
+    name: 'AGESA Teknoloji Sektörü Fonu', 
+    category: 'emk', 
+    amount: 1000,
+    value: 194.43, 
+    price: 0.194426,
+    costBasis: 180.00,
+    change: 2.5 
+  },
+]
 
 interface ImportResult {
   success: boolean
