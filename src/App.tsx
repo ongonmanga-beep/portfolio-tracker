@@ -14,6 +14,7 @@ import {
   Activity,
   DollarSign,
   Clock,
+  Target,
   Moon,
   Sun
 } from 'lucide-react'
@@ -81,6 +82,8 @@ function App() {
         return <Assets />
       case 'transactions':
         return <Transactions />
+      case 'goals':
+        return <Goals />
       case 'analysis':
         return <Analysis />
       case 'goals':
@@ -111,6 +114,7 @@ function App() {
               <NavButton icon={LayoutGrid} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
               <NavButton icon={Wallet} label="Varlıklar" active={activeTab === 'assets'} onClick={() => setActiveTab('assets')} />
               <NavButton icon={TrendingUp} label="İşlemler" active={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
+              <NavButton icon={Target} label="Hedefler" active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} />
               <NavButton icon={PieChartIcon} label="Analiz" active={activeTab === 'analysis'} onClick={() => setActiveTab('analysis')} />
               <NavButton icon={Bell} label="Bildirimler" active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} />
             </div>
