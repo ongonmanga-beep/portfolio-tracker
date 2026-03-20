@@ -652,57 +652,59 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
       setError('')
       
       try {
-        // Önce seçili kategoride ara
-        const primaryKind = form.category === 'emk' ? 'EMK' : 'YAT'
-        const secondaryKind = form.category === 'emk' ? 'YAT' : 'EMK'
+        // Son 5 günü çek
+        const endDate = new Date().toISOString().split('T')[0]
+        const startDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         
-        // İlk kategori
-        let url = `http://localhost:8080/api/v1/prices/${form.symbol.toUpperCase()}?start=2024-01-01&end=2026-12-31&kind=${primaryKind}`
-        console.log('Fetching primary:', url)
+        // EMK ve YAT'de PARALEL ara (hızlı)
+        const [emkUrl, yatUrl] = [
+          `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=EMK`,
+          `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=YAT`
+        ]
         
-        let response = await fetch(url, { signal: abortController.signal })
-        let data = await response.json()
-        console.log('Primary response:', data.data?.count || 0)
+        console.log('Fetching EMK & YAT:', form.symbol.toUpperCase())
         
-        // Bulunamadıysa ikinci kategoride dene
-        if (!data.data?.prices?.length) {
-          url = `http://localhost:8080/api/v1/prices/${form.symbol.toUpperCase()}?start=2024-01-01&end=2026-12-31&kind=${secondaryKind}`
-          console.log('Fetching secondary:', url)
-          
-          response = await fetch(url, { signal: abortController.signal })
-          data = await response.json()
-          console.log('Secondary response:', data.data?.count || 0)
-        }
+        const [emkRes, yatRes] = await Promise.all([
+          fetch(emkUrl, { signal: abortController.signal }),
+          fetch(yatUrl, { signal: abortController.signal })
+        ])
         
+        const [emkData, yatData] = await Promise.all([
+          emkRes.json(),
+          yatRes.json()
+        ])
+        
+        console.log('EMK:', emkData.data?.count || 0, '| YAT:', yatData.data?.count || 0)
+        
+        // Hangisinde veri varsa onu kullan
+        let data = emkData.data?.prices?.length ? emkData : yatData
+        let kind = emkData.data?.prices?.length ? 'emk' : 'yat'
+        
+        // En son veriyi al
         if (data.data && data.data.prices && data.data.prices.length > 0) {
           const latest = data.data.prices[0]
-          // TRY'den USD'ye çevir
           const priceUSD = latest.price / USD_TRY_RATE
-          console.log('Price USD:', priceUSD)
+          console.log(`Found in ${kind.toUpperCase()}:`, latest.date, latest.price, '→ USD:', priceUSD)
           setForm(prev => ({
             ...prev,
             name: latest.title || prev.name,
             price: priceUSD.toFixed(6),
-            category: primaryKind.toLowerCase()
+            category: kind
           }))
         } else {
-          console.log('No prices found in either category')
+          console.log('Not found in EMK or YAT')
           setError('Fon bulunamadı')
         }
       } catch (err: any) {
-        if (err.name === 'AbortError') {
-          console.log('Fetch aborted')
-          return
-        }
+        if (err.name === 'AbortError') return
         console.error('Fetch error:', err)
         setError('API bağlantı hatası')
       } finally {
         setLoading(false)
-        console.log('Loading finished')
       }
     }
 
-    const debounceTimer = setTimeout(fetchPrice, 800)
+    const debounceTimer = setTimeout(fetchPrice, 300)
     return () => {
       clearTimeout(debounceTimer)
       abortController.abort()
