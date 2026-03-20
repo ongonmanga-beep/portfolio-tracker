@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Plus, Search, Upload, X, CheckCircle, AlertCircle, Edit2, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
 
 const assetCategories = [
@@ -630,8 +630,47 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
     price: '',
     value: '',
     change: '0',
-    category: 'stocks'
+    category: 'emk'
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  // Sembol değişince TEFAS'tan son fiyatı çek
+  useEffect(() => {
+    const fetchLatestPrice = async () => {
+      if (form.symbol.length < 3) return
+      
+      setLoading(true)
+      setError('')
+      
+      try {
+        const kind = form.category === 'emk' ? 'EMK' : 'YAT'
+        const response = await fetch(
+          `http://localhost:8080/api/v1/prices/${form.symbol.toUpperCase()}?start=2024-01-01&end=2026-12-31&kind=${kind}`
+        )
+        const data = await response.json()
+        
+        if (data.data && data.data.prices && data.data.prices.length > 0) {
+          const latest = data.data.prices[0]
+          setForm(prev => ({
+            ...prev,
+            name: latest.title || prev.name,
+            price: latest.price.toString(),
+            category: kind.toLowerCase()
+          }))
+        } else {
+          setError('Fon bulunamadı')
+        }
+      } catch (err) {
+        console.error('Failed to fetch price:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const debounceTimer = setTimeout(fetchLatestPrice, 500)
+    return () => clearTimeout(debounceTimer)
+  }, [form.symbol, form.category])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -660,13 +699,21 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Sembol *</label>
-              <input
-                value={form.symbol}
-                onChange={(e) => setForm({ ...form, symbol: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="AAPL"
-                required
-              />
+              <div className="relative">
+                <input
+                  value={form.symbol}
+                  onChange={(e) => setForm({ ...form, symbol: e.target.value.toUpperCase() })}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="AVR"
+                  required
+                />
+                {loading && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
+              {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">İsim *</label>
