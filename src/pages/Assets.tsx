@@ -10,9 +10,6 @@ const assetCategories = [
   { id: 'etf', name: 'ETF/Fon' },
 ]
 
-// USD/TRY kuru (güncel kur ~35.5)
-const USD_TRY_RATE = 35.5
-
 const sampleAssets = [
   { 
     id: 1, 
@@ -638,6 +635,32 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [usdTryRate, setUsdTryRate] = useState(35.5)
+
+  // Güncel USD/TRY kurunu çek
+  useEffect(() => {
+    const fetchRate = async () => {
+      try {
+        // TCMB API (günlük kur)
+        const response = await fetch('https://api.tcmb.gov.tr/api/currency/USD/TRY')
+        const data = await response.json()
+        if (data?.data?.value) {
+          setUsdTryRate(parseFloat(data.data.value))
+        } else {
+          // Alternatif: ExchangeRate-API
+          const altResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+          const altData = await altResponse.json()
+          if (altData?.rates?.TRY) {
+            setUsdTryRate(altData.rates.TRY)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch USD/TRY rate, using default:', err)
+        setUsdTryRate(35.5)
+      }
+    }
+    fetchRate()
+  }, [])
 
   // Tüm kategoriler
   const categories = [
@@ -651,10 +674,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
     { id: 'byf', label: 'BYF', icon: '📉' }
   ]
 
-  // USD/TRY kuru (güncel kur ~35.5)
-  const USD_TRY_RATE = 35.5
-
-  // Sembol değişince API'den son fiyatı çek (EMK ve YAT'de ara)
+  // Sembol değişince API'den son fiyatı çek (kategorilere göre ara)
   useEffect(() => {
     const abortController = new AbortController()
     
@@ -669,7 +689,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
         const endDate = new Date().toISOString().split('T')[0]
         const startDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         
-        // Sadece fon kategorileri için API'den fiyat çek
+        // Kategoriye göre API belirle
         const fundCategories: Record<string, string> = {
           'emk': 'EMK',
           'yat': 'YAT',
@@ -679,19 +699,18 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
         const selectedKind = fundCategories[activeTab]
         
         if (selectedKind) {
-          // Fon kategorisi - API'den çek
+          // TEFAS fonu - API'den çek
           const url = `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=${selectedKind}`
-          console.log(`Fetching ${selectedKind}:`, url)
+          console.log(`Fetching TEFAS ${selectedKind}:`, url)
           
           const response = await fetch(url, { signal: abortController.signal })
           const data = await response.json()
           console.log(`${selectedKind} response:`, data.data?.count || 0)
           
-          // En son veriyi al
           if (data.data && data.data.prices && data.data.prices.length > 0) {
             const latest = data.data.prices[0]
-            const priceUSD = latest.price / USD_TRY_RATE
-            console.log(`Found in ${selectedKind}:`, latest.date, latest.price, '→ USD:', priceUSD)
+            const priceUSD = latest.price / usdTryRate
+            console.log(`Found in ${selectedKind}:`, latest.date, latest.price, `→ USD: ${priceUSD}`)
             setForm(prev => ({
               ...prev,
               name: latest.title || prev.name,
@@ -702,8 +721,28 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
             console.log(`Not found in ${selectedKind}`)
             setError('Fon bulunamadı')
           }
+        } else if (activeTab === 'stocks') {
+          // Hisse - Yahoo Finance'den çek
+          const url = `http://localhost:8000/api/v1/stocks/${form.symbol.toUpperCase()}`
+          console.log('Fetching Yahoo Finance:', url)
+          
+          const response = await fetch(url, { signal: abortController.signal })
+          const data = await response.json()
+          
+          if (data.price) {
+            console.log(`Found stock: ${data.symbol} = $${data.price}`)
+            setForm(prev => ({
+              ...prev,
+              name: data.name || prev.name,
+              price: data.price.toFixed(6),
+              category: activeTab
+            }))
+          } else {
+            console.log('Stock not found')
+            setError('Hisse bulunamadı')
+          }
         } else {
-          // Fon değil (hisse, kripto, vb.) - manuel giriş
+          // Diğer kategoriler - manuel giriş
           console.log('Manual entry for category:', activeTab)
           setLoading(false)
           return
@@ -812,14 +851,14 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">
-                Fiyat ($) {['emk', 'yat', 'byf'].includes(activeTab) ? '(Otomatik)' : ''}
+                Fiyat ($) {['emk', 'yat', 'byf'].includes(activeTab) ? '(TEFAS)' : activeTab === 'stocks' ? '(Yahoo Finance)' : '(Manuel)'}
               </label>
               <input
                 type="number"
                 step="0.000001"
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
-                readOnly={['emk', 'yat', 'byf'].includes(activeTab)}
+                readOnly={['emk', 'yat', 'byf', 'stocks'].includes(activeTab)}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 placeholder="150.00"
               />
