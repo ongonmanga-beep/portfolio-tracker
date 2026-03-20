@@ -626,6 +626,7 @@ function EditModal({ asset, onSave, onCancel }: { asset: any, onSave: (a: any) =
 }
 
 function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onCancel: () => void }) {
+  const [activeTab, setActiveTab] = useState<'emk' | 'yat' | 'byf'>('yat')
   const [form, setForm] = useState({
     symbol: '',
     name: '',
@@ -663,7 +664,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
           'byf': 'BYF'
         }
         
-        const selectedKind = categoryToKind[form.category] || 'EMK'
+        const selectedKind = categoryToKind[activeTab] || 'YAT'
         
         // Seçili kategoride ara
         const url = `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=${selectedKind}`
@@ -682,7 +683,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
             ...prev,
             name: latest.title || prev.name,
             price: priceUSD.toFixed(6),
-            category: form.category
+            category: activeTab
           }))
         } else {
           console.log(`Not found in ${selectedKind}`)
@@ -702,7 +703,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
       clearTimeout(debounceTimer)
       abortController.abort()
     }
-  }, [form.symbol])
+  }, [form.symbol, activeTab])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -727,6 +728,44 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-5 shadow-xl">
         <h3 className="text-base font-semibold mb-4">Yeni Varlık Ekle</h3>
+        
+        {/* Tabs */}
+        <div className="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-900 rounded-lg p-1">
+          <button
+            type="button"
+            onClick={() => { setActiveTab('emk'); setForm(prev => ({ ...prev, category: 'emk' })) }}
+            className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition ${
+              activeTab === 'emk'
+                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            BES (EMK)
+          </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab('yat'); setForm(prev => ({ ...prev, category: 'yat' })) }}
+            className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition ${
+              activeTab === 'yat'
+                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            Yatırım Fonu
+          </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab('byf'); setForm(prev => ({ ...prev, category: 'byf' })) }}
+            className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition ${
+              activeTab === 'byf'
+                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            BYF
+          </button>
+        </div>
+        
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
