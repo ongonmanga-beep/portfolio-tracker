@@ -633,7 +633,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
     price: '',
     value: '',
     change: '0',
-    category: 'emk'
+    category: 'yat'
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -656,43 +656,36 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
         const endDate = new Date().toISOString().split('T')[0]
         const startDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         
-        // EMK ve YAT'de PARALEL ara (hızlı)
-        const [emkUrl, yatUrl] = [
-          `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=EMK`,
-          `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=YAT`
-        ]
+        // Kategoriye göre API kind belirle
+        const categoryToKind: Record<string, string> = {
+          'emk': 'EMK',
+          'yat': 'YAT',
+          'byf': 'BYF'
+        }
         
-        console.log('Fetching EMK & YAT:', form.symbol.toUpperCase())
+        const selectedKind = categoryToKind[form.category] || 'EMK'
         
-        const [emkRes, yatRes] = await Promise.all([
-          fetch(emkUrl, { signal: abortController.signal }),
-          fetch(yatUrl, { signal: abortController.signal })
-        ])
+        // Seçili kategoride ara
+        const url = `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=${selectedKind}`
+        console.log(`Fetching ${selectedKind}:`, url)
         
-        const [emkData, yatData] = await Promise.all([
-          emkRes.json(),
-          yatRes.json()
-        ])
-        
-        console.log('EMK:', emkData.data?.count || 0, '| YAT:', yatData.data?.count || 0)
-        
-        // Hangisinde veri varsa onu kullan
-        let data = emkData.data?.prices?.length ? emkData : yatData
-        let kind = emkData.data?.prices?.length ? 'emk' : 'yat'
+        const response = await fetch(url, { signal: abortController.signal })
+        const data = await response.json()
+        console.log(`${selectedKind} response:`, data.data?.count || 0)
         
         // En son veriyi al
         if (data.data && data.data.prices && data.data.prices.length > 0) {
           const latest = data.data.prices[0]
           const priceUSD = latest.price / USD_TRY_RATE
-          console.log(`Found in ${kind.toUpperCase()}:`, latest.date, latest.price, '→ USD:', priceUSD)
+          console.log(`Found in ${selectedKind}:`, latest.date, latest.price, '→ USD:', priceUSD)
           setForm(prev => ({
             ...prev,
             name: latest.title || prev.name,
             price: priceUSD.toFixed(6),
-            category: kind
+            category: form.category
           }))
         } else {
-          console.log('Not found in EMK or YAT')
+          console.log(`Not found in ${selectedKind}`)
           setError('Fon bulunamadı')
         }
       } catch (err: any) {
@@ -825,6 +818,8 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
                 <option value="cash">Nakit</option>
                 <option value="etf">ETF/Fon</option>
                 <option value="emk">BES (EMK)</option>
+                <option value="yat">Yatırım Fonu (YAT)</option>
+                <option value="byf">BYF</option>
               </select>
             </div>
           </div>
