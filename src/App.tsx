@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   LayoutGrid, 
   Wallet,
   TrendingUp,
-  PieChart, 
+  PieChart as PieChartIcon, 
   Bell, 
   Settings,
   Plus,
@@ -13,9 +13,12 @@ import {
   ChevronDown,
   Activity,
   DollarSign,
-  Clock
+  Clock,
+  Moon,
+  Sun
 } from 'lucide-react'
 import ReactECharts from 'echarts-for-react'
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import Assets from './pages/Assets'
 import Transactions from './pages/Transactions'
 import Analysis from './pages/Analysis'
@@ -26,6 +29,23 @@ import SettingsPage from './pages/Settings'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    return stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  })
+
+  // Theme değişince localStorage'a kaydet ve class ekle
+  useEffect(() => {
+    const root = document.documentElement
+    if (darkMode) {
+      root.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      root.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [darkMode])
+
   const [assets, setAssets] = useState(() => {
     try {
       const stored = localStorage.getItem('portfolio_assets_v1')
@@ -56,7 +76,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard portfolio={portfolio} />
+        return <Dashboard portfolio={portfolio} assets={assets} />
       case 'assets':
         return <Assets />
       case 'transactions':
@@ -77,8 +97,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0C0F] text-slate-100">
-      <nav className="fixed top-0 left-0 right-0 h-16 bg-[#0B0C0F]/80 backdrop-blur-xl border-b border-white/[0.06] z-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0B0C0F] text-gray-900 dark:text-slate-100 transition-colors">
+      <nav className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-[#0B0C0F]/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06] z-50">
         <div className="h-full px-6 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-3">
@@ -92,20 +112,26 @@ function App() {
               <NavButton icon={LayoutGrid} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
               <NavButton icon={Wallet} label="Varlıklar" active={activeTab === 'assets'} onClick={() => setActiveTab('assets')} />
               <NavButton icon={TrendingUp} label="İşlemler" active={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
-              <NavButton icon={PieChart} label="Analiz" active={activeTab === 'analysis'} onClick={() => setActiveTab('analysis')} />
+              <NavButton icon={PieChartIcon} label="Analiz" active={activeTab === 'analysis'} onClick={() => setActiveTab('analysis')} />
               <NavButton icon={Bell} label="Bildirimler" active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500" />
               <input 
                 type="text" 
                 placeholder="Ara..." 
-                className="w-64 pl-10 pr-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.06] transition-all"
+                className="w-64 pl-10 pr-4 py-2 bg-gray-100 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-lg text-sm text-gray-900 dark:text-slate-200 placeholder:text-gray-500 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 dark:focus:bg-white/[0.06] transition-all"
               />
             </div>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.08] transition-colors"
+            >
+              {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-400" />}
+            </button>
             <button className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.08] transition-colors">
               <Settings className="w-4 h-4 text-slate-400" />
             </button>
@@ -141,7 +167,7 @@ function NavButton({ icon: Icon, active, onClick, label }: { icon: any, active: 
   )
 }
 
-function Dashboard({ portfolio }: { portfolio: any }) {
+function Dashboard({ portfolio, assets }: { portfolio: any, assets: any[] }) {
   const allocation = portfolio.assets.map((asset: any) => ({
     name: asset.symbol,
     value: asset.value,
@@ -149,21 +175,16 @@ function Dashboard({ portfolio }: { portfolio: any }) {
     percent: ((asset.value / portfolio.totalValue) * 100).toFixed(1)
   }))
 
+  const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#06b6d4', '#14b8a6', '#3b82f6', '#0ea5e9', '#22c55e', '#eab308', '#f97316']
   const greenColors = ['#16a34a', '#15803d', '#166534', '#22c55e', '#4ade80', '#86efac']
   const redColors = ['#dc2626', '#b91c1c', '#991b1b', '#ef4444', '#f87171', '#fca5a5']
 
   return (
     <div className="space-y-6">
       <header className="mb-8">
-        <div className="flex items-end justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-            <p className="text-sm text-slate-500 mt-1">Portföyüne genel bakış</p>
-          </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white text-[#0B0C0F] rounded-lg text-sm font-medium hover:bg-white/90 transition-colors">
-            <Plus className="w-4 h-4" />
-            <span>Yeni Varlık</span>
-          </button>
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+          <p className="text-sm text-slate-500 mt-1">Portföyüne genel bakış</p>
         </div>
       </header>
 
@@ -296,7 +317,7 @@ function Dashboard({ portfolio }: { portfolio: any }) {
               <div key={item.name} className="flex items-center gap-2 cursor-pointer group">
                 <div 
                   className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-125" 
-                  style={{ backgroundColor: colorArray[index % colorArray.length] }} 
+                  style={{ backgroundColor: colorArray[index % colors.length] }} 
                 />
                 <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200 transition-colors">
                   {item.name}
@@ -307,6 +328,56 @@ function Dashboard({ portfolio }: { portfolio: any }) {
               </div>
             )
           })}
+        </div>
+
+        {/* Donut Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5 backdrop-blur-sm">
+            <h3 className="text-sm font-medium text-slate-300 mb-4">Varlık Türü</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={Object.entries(
+                      assets.reduce((acc: any, a: any) => {
+                        acc[a.category] = (acc[a.category] || 0) + a.value
+                        return acc
+                      }, {})
+                    ).map(([key, value]: any) => ({ name: key.toUpperCase(), value }))}
+                    cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value"
+                  >
+                    {Object.keys(assets.reduce((acc: any, a: any) => { acc[a.category] = true; return acc }, {})).map((key: string, i: number) => (
+                      <Cell key={key} fill={colors[i % colors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5 backdrop-blur-sm">
+            <h3 className="text-sm font-medium text-slate-300 mb-4">Kâr/Zarar</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Kâr', value: assets.filter((a: any) => a.change >= 0).reduce((sum: number, a: any) => sum + a.value, 0) },
+                      { name: 'Zarar', value: assets.filter((a: any) => a.change < 0).reduce((sum: number, a: any) => sum + a.value, 0) }
+                    ]}
+                    cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value"
+                  >
+                    <Cell fill="#10b981" />
+                    <Cell fill="#ef4444" />
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
     </div>
   )
