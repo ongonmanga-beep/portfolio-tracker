@@ -10,6 +10,9 @@ const assetCategories = [
   { id: 'etf', name: 'ETF/Fon' },
 ]
 
+// USD/TRY kuru (güncel kur ~35.5)
+const USD_TRY_RATE = 35.5
+
 const sampleAssets = [
   { 
     id: 1, 
@@ -17,9 +20,9 @@ const sampleAssets = [
     name: 'AGESA Teknoloji Sektörü Fonu', 
     category: 'emk', 
     amount: 1000,
-    value: 375.51, 
-    price: 0.375507,
-    costBasis: 350.00,
+    price: 0.010577, // 0.375507 TRY / 35.5
+    value: 10.58, // 1000 * 0.010577 USD
+    costBasis: 9.86, // 350 TRY / 35.5
     change: 7.3 
   },
 ]
@@ -635,9 +638,12 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Bilinen fonlar için otomatik doldurma
-  const knownFunds: Record<string, { name: string, price: number, category: string }> = {
-    'AVR': { name: 'AGESA Teknoloji Sektörü Fonu', price: 0.375507, category: 'emk' },
+  // USD/TRY kuru (güncel kur ~35.5)
+  const USD_TRY_RATE = 35.5
+
+  // Bilinen fonlar için otomatik doldurma (TRY cinsinden)
+  const knownFunds: Record<string, { name: string, priceTRY: number, category: string }> = {
+    'AVR': { name: 'AGESA Teknoloji Sektörü Fonu', priceTRY: 0.375507, category: 'emk' },
   }
 
   // Sembol değişince bilinen fonları kontrol et
@@ -645,10 +651,12 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
     if (form.symbol.length >= 3) {
       const known = knownFunds[form.symbol.toUpperCase()]
       if (known) {
+        // TRY'den USD'ye çevir
+        const priceUSD = known.priceTRY / USD_TRY_RATE
         setForm(prev => ({
           ...prev,
           name: known.name,
-          price: known.price.toString(),
+          price: priceUSD.toFixed(6),
           category: known.category
         }))
       }
