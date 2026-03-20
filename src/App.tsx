@@ -178,6 +178,17 @@ function Dashboard({ portfolio, assets }: { portfolio: any, assets: any[] }) {
     percent: ((asset.value / portfolio.totalValue) * 100).toFixed(1)
   }))
 
+  // Temettü/Pasif gelir hesaplamaları
+  const dividendStocks = assets.filter((a: any) => a.dividendPerShare && a.dividendPerShare > 0)
+  const annualDividendIncome = dividendStocks.reduce((sum: number, a: any) => {
+    const freqMultiplier = a.paymentFrequency === 'monthly' ? 12 : a.paymentFrequency === 'quarterly' ? 4 : 1
+    return sum + (a.dividendPerShare * a.amount * freqMultiplier)
+  }, 0)
+  const monthlyDividendIncome = annualDividendIncome / 12
+  const avgDividendYield = dividendStocks.length > 0 
+    ? dividendStocks.reduce((sum: number, a: any) => sum + (a.dividendYield || 0), 0) / dividendStocks.length 
+    : 0
+
   const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#06b6d4', '#14b8a6', '#3b82f6', '#0ea5e9', '#22c55e', '#eab308', '#f97316']
   const greenColors = ['#16a34a', '#15803d', '#166534', '#22c55e', '#4ade80', '#86efac']
   const redColors = ['#dc2626', '#b91c1c', '#991b1b', '#ef4444', '#f87171', '#fca5a5']
@@ -218,6 +229,37 @@ function Dashboard({ portfolio, assets }: { portfolio: any, assets: any[] }) {
             </span>
           </div>
         </div>
+
+        {/* Pasif Gelir Kartı */}
+        {dividendStocks.length > 0 && (
+          <div className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-xl p-5 backdrop-blur-sm">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-emerald-300">Pasif Gelir (Temettü)</span>
+                  <p className="text-xs text-emerald-400/70">{dividendStocks.length} hisse</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-emerald-300">Ortalama Getiri</p>
+                <p className="text-lg font-semibold text-emerald-400">{avgDividendYield.toFixed(2)}%</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-emerald-300/70 mb-1">Aylık Gelir</p>
+                <p className="text-2xl font-bold text-emerald-400">${monthlyDividendIncome.toFixed(2)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-emerald-300/70 mb-1">Yıllık Gelir</p>
+                <p className="text-2xl font-bold text-emerald-400">${annualDividendIncome.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {allocation.length > 0 ? (

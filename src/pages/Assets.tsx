@@ -17,10 +17,52 @@ const sampleAssets = [
     name: 'AGESA Teknoloji Sektörü Fonu', 
     category: 'emk', 
     amount: 1000,
-    price: 0.010577, // 0.375507 TRY / 35.5
-    value: 10.58, // 1000 * 0.010577 USD
-    costBasis: 9.86, // 350 TRY / 35.5
+    price: 0.010577,
+    value: 10.58,
+    costBasis: 9.86,
     change: 7.3 
+  },
+  {
+    id: 2,
+    symbol: 'AAPL',
+    name: 'Apple Inc.',
+    category: 'stocks',
+    amount: 50,
+    price: 175.50,
+    value: 8775,
+    costBasis: 8500,
+    change: 3.2,
+    dividendPerShare: 0.24,
+    dividendYield: 0.55,
+    paymentFrequency: 'quarterly'
+  },
+  {
+    id: 3,
+    symbol: 'KO',
+    name: 'Coca-Cola Company',
+    category: 'stocks',
+    amount: 100,
+    price: 58.50,
+    value: 5850,
+    costBasis: 5500,
+    change: 6.4,
+    dividendPerShare: 0.485,
+    dividendYield: 3.32,
+    paymentFrequency: 'quarterly'
+  },
+  {
+    id: 4,
+    symbol: 'JNJ',
+    name: 'Johnson & Johnson',
+    category: 'stocks',
+    amount: 30,
+    price: 155.20,
+    value: 4656,
+    costBasis: 4500,
+    change: 3.5,
+    dividendPerShare: 1.19,
+    dividendYield: 3.06,
+    paymentFrequency: 'quarterly'
   },
 ]
 
@@ -274,10 +316,12 @@ export default function Assets() {
               <th className="px-3 py-2 text-left font-medium text-gray-500">Varlık</th>
               <th className="px-3 py-2 text-left font-medium text-gray-500">Kategori</th>
               <th className="px-3 py-2 text-right font-medium text-gray-500">Miktar</th>
-              <th className="px-3 py-2 text-right font-medium text-gray-500">Maliyet</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">Fiyat</th>
               <th className="px-3 py-2 text-right font-medium text-gray-500">Değer</th>
               <th className="px-3 py-2 text-right font-medium text-gray-500">Kâr/Zarar</th>
               <th className="px-3 py-2 text-right font-medium text-gray-500">±%</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">Temettü</th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500">Getiri</th>
               <th className="px-3 py-2 text-right font-medium text-gray-500"></th>
             </tr>
           </thead>
@@ -322,6 +366,16 @@ export default function Assets() {
                     {asset.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                     {asset.change >= 0 ? '+' : ''}{asset.change}%
                   </span>
+                </td>
+                <td className="px-3 py-2.5 text-right text-gray-600 dark:text-gray-400">
+                  {asset.dividendPerShare ? `$${asset.dividendPerShare.toFixed(4)}` : '-'}
+                </td>
+                <td className="px-3 py-2.5 text-right">
+                  {asset.dividendYield ? (
+                    <span className="text-emerald-600 font-medium">{asset.dividendYield.toFixed(2)}%</span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
                 </td>
                 <td className="px-3 py-2.5 text-right">
                   <div className="flex items-center justify-end gap-1">
@@ -631,7 +685,10 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
     price: '',
     value: '',
     change: '0',
-    category: 'yat'
+    category: 'yat',
+    dividendPerShare: '',
+    dividendYield: '',
+    paymentFrequency: 'yearly'
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -778,7 +835,10 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
       value,
       costBasis: amount * price,
       category: form.category,
-      change: parseFloat(form.change)
+      change: parseFloat(form.change),
+      dividendPerShare: parseFloat(form.dividendPerShare) || 0,
+      dividendYield: form.price ? ((parseFloat(form.dividendPerShare) || 0) / parseFloat(form.price)) * 100 : 0,
+      paymentFrequency: form.paymentFrequency || 'yearly'
     })
   }
 
@@ -903,6 +963,33 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
                 placeholder="0"
               />
             </div>
+            {activeTab === 'stocks' && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Temettü ($/hisse)</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={form.dividendPerShare}
+                    onChange={(e) => setForm({ ...form, dividendPerShare: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Ödeme</label>
+                  <select
+                    value={form.paymentFrequency}
+                    onChange={(e) => setForm({ ...form, paymentFrequency: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="monthly">Aylık</option>
+                    <option value="quarterly">3 Aylık</option>
+                    <option value="yearly">Yıllık</option>
+                  </select>
+                </div>
+              </>
+            )}
           </div>
           <div className="flex gap-2 pt-3">
             <button type="button" onClick={onCancel} className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm">
