@@ -626,7 +626,7 @@ function EditModal({ asset, onSave, onCancel }: { asset: any, onSave: (a: any) =
 }
 
 function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onCancel: () => void }) {
-  const [activeTab, setActiveTab] = useState<'emk' | 'yat' | 'byf'>('yat')
+  const [activeTab, setActiveTab] = useState('yat')
   const [form, setForm] = useState({
     symbol: '',
     name: '',
@@ -638,6 +638,18 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Tüm kategoriler
+  const categories = [
+    { id: 'stocks', label: 'Hisse', icon: '📈' },
+    { id: 'crypto', label: 'Kripto', icon: '₿' },
+    { id: 'realestate', label: 'Gayrimenkul', icon: '🏠' },
+    { id: 'cash', label: 'Nakit', icon: '💰' },
+    { id: 'etf', label: 'ETF/Fon', icon: '📊' },
+    { id: 'emk', label: 'BES', icon: '👴' },
+    { id: 'yat', label: 'Yatırım Fonu', icon: '💼' },
+    { id: 'byf', label: 'BYF', icon: '📉' }
+  ]
 
   // USD/TRY kuru (güncel kur ~35.5)
   const USD_TRY_RATE = 35.5
@@ -657,37 +669,44 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
         const endDate = new Date().toISOString().split('T')[0]
         const startDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         
-        // Kategoriye göre API kind belirle
-        const categoryToKind: Record<string, string> = {
+        // Sadece fon kategorileri için API'den fiyat çek
+        const fundCategories: Record<string, string> = {
           'emk': 'EMK',
           'yat': 'YAT',
           'byf': 'BYF'
         }
         
-        const selectedKind = categoryToKind[activeTab] || 'YAT'
+        const selectedKind = fundCategories[activeTab]
         
-        // Seçili kategoride ara
-        const url = `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=${selectedKind}`
-        console.log(`Fetching ${selectedKind}:`, url)
-        
-        const response = await fetch(url, { signal: abortController.signal })
-        const data = await response.json()
-        console.log(`${selectedKind} response:`, data.data?.count || 0)
-        
-        // En son veriyi al
-        if (data.data && data.data.prices && data.data.prices.length > 0) {
-          const latest = data.data.prices[0]
-          const priceUSD = latest.price / USD_TRY_RATE
-          console.log(`Found in ${selectedKind}:`, latest.date, latest.price, '→ USD:', priceUSD)
-          setForm(prev => ({
-            ...prev,
-            name: latest.title || prev.name,
-            price: priceUSD.toFixed(6),
-            category: activeTab
-          }))
+        if (selectedKind) {
+          // Fon kategorisi - API'den çek
+          const url = `http://localhost:8000/api/v1/prices/${form.symbol.toUpperCase()}?start=${startDate}&end=${endDate}&kind=${selectedKind}`
+          console.log(`Fetching ${selectedKind}:`, url)
+          
+          const response = await fetch(url, { signal: abortController.signal })
+          const data = await response.json()
+          console.log(`${selectedKind} response:`, data.data?.count || 0)
+          
+          // En son veriyi al
+          if (data.data && data.data.prices && data.data.prices.length > 0) {
+            const latest = data.data.prices[0]
+            const priceUSD = latest.price / USD_TRY_RATE
+            console.log(`Found in ${selectedKind}:`, latest.date, latest.price, '→ USD:', priceUSD)
+            setForm(prev => ({
+              ...prev,
+              name: latest.title || prev.name,
+              price: priceUSD.toFixed(6),
+              category: activeTab
+            }))
+          } else {
+            console.log(`Not found in ${selectedKind}`)
+            setError('Fon bulunamadı')
+          }
         } else {
-          console.log(`Not found in ${selectedKind}`)
-          setError('Fon bulunamadı')
+          // Fon değil (hisse, kripto, vb.) - manuel giriş
+          console.log('Manual entry for category:', activeTab)
+          setLoading(false)
+          return
         }
       } catch (err: any) {
         if (err.name === 'AbortError') return
@@ -726,44 +745,26 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-5 shadow-xl">
+      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full p-5 shadow-xl">
         <h3 className="text-base font-semibold mb-4">Yeni Varlık Ekle</h3>
         
-        {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-900 rounded-lg p-1">
-          <button
-            type="button"
-            onClick={() => { setActiveTab('emk'); setForm(prev => ({ ...prev, category: 'emk' })) }}
-            className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition ${
-              activeTab === 'emk'
-                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            BES (EMK)
-          </button>
-          <button
-            type="button"
-            onClick={() => { setActiveTab('yat'); setForm(prev => ({ ...prev, category: 'yat' })) }}
-            className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition ${
-              activeTab === 'yat'
-                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            Yatırım Fonu
-          </button>
-          <button
-            type="button"
-            onClick={() => { setActiveTab('byf'); setForm(prev => ({ ...prev, category: 'byf' })) }}
-            className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition ${
-              activeTab === 'byf'
-                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            BYF
-          </button>
+        {/* Tabs - Scrollable */}
+        <div className="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-900 rounded-lg p-1 overflow-x-auto">
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => { setActiveTab(cat.id); setForm(prev => ({ ...prev, category: cat.id })) }}
+              className={`px-3 py-2 text-xs font-medium rounded-md whitespace-nowrap transition ${
+                activeTab === cat.id
+                  ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              <span className="mr-1">{cat.icon}</span>
+              {cat.label}
+            </button>
+          ))}
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -810,13 +811,16 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Fiyat ($)</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Fiyat ($) {['emk', 'yat', 'byf'].includes(activeTab) ? '(Otomatik)' : ''}
+              </label>
               <input
                 type="number"
-                step="0.01"
+                step="0.000001"
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                readOnly={['emk', 'yat', 'byf'].includes(activeTab)}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 placeholder="150.00"
               />
             </div>
@@ -843,23 +847,6 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Kategori</label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="stocks">Hisse</option>
-                <option value="crypto">Kripto</option>
-                <option value="realestate">Gayrimenkul</option>
-                <option value="cash">Nakit</option>
-                <option value="etf">ETF/Fon</option>
-                <option value="emk">BES (EMK)</option>
-                <option value="yat">Yatırım Fonu (YAT)</option>
-                <option value="byf">BYF</option>
-              </select>
             </div>
           </div>
           <div className="flex gap-2 pt-3">
