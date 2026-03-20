@@ -17,10 +17,10 @@ const sampleAssets = [
     name: 'AGESA Teknoloji Sektörü Fonu', 
     category: 'emk', 
     amount: 1000,
-    value: 194.43, 
-    price: 0.194426,
-    costBasis: 180.00,
-    change: 2.5 
+    value: 375.51, 
+    price: 0.375507,
+    costBasis: 350.00,
+    change: 7.3 
   },
 ]
 
