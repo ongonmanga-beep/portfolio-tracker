@@ -11,10 +11,11 @@ const assetCategories = [
 ]
 
 const sampleAssets = [
+  // TEFAS Fonları
   { 
     id: 1, 
     symbol: 'AVR', 
-    name: 'AGESA Teknoloji Sektörü Fonu', 
+    name: 'AGESA Teknoloji Fonu', 
     category: 'emk', 
     amount: 1000,
     price: 0.010577,
@@ -22,6 +23,8 @@ const sampleAssets = [
     costBasis: 9.86,
     change: 7.3 
   },
+  
+  // ABD Temettü Hisseleri
   {
     id: 2,
     symbol: 'AAPL',
@@ -39,7 +42,7 @@ const sampleAssets = [
   {
     id: 3,
     symbol: 'KO',
-    name: 'Coca-Cola Company',
+    name: 'Coca-Cola',
     category: 'stocks',
     amount: 100,
     price: 58.50,
@@ -63,6 +66,58 @@ const sampleAssets = [
     dividendPerShare: 1.19,
     dividendYield: 3.06,
     paymentFrequency: 'quarterly'
+  },
+  {
+    id: 5,
+    symbol: 'PG',
+    name: 'Procter & Gamble',
+    category: 'stocks',
+    amount: 40,
+    price: 155.00,
+    value: 6200,
+    costBasis: 6000,
+    change: 3.3,
+    dividendPerShare: 0.94,
+    dividendYield: 2.43,
+    paymentFrequency: 'quarterly'
+  },
+  {
+    id: 6,
+    symbol: 'VZ',
+    name: 'Verizon',
+    category: 'stocks',
+    amount: 150,
+    price: 40.50,
+    value: 6075,
+    costBasis: 5800,
+    change: 4.7,
+    dividendPerShare: 0.665,
+    dividendYield: 6.57,
+    paymentFrequency: 'quarterly'
+  },
+  
+  // Kripto
+  {
+    id: 7,
+    symbol: 'BTC',
+    name: 'Bitcoin',
+    category: 'crypto',
+    amount: 0.5,
+    price: 67500,
+    value: 33750,
+    costBasis: 30000,
+    change: 12.5
+  },
+  {
+    id: 8,
+    symbol: 'ETH',
+    name: 'Ethereum',
+    category: 'crypto',
+    amount: 5,
+    price: 3500,
+    value: 17500,
+    costBasis: 16000,
+    change: 9.4
   },
 ]
 

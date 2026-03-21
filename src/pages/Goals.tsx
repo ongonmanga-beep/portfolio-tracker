@@ -3,8 +3,21 @@ import { Plus, Target, TrendingUp, Calendar, DollarSign, PieChart } from 'lucide
 import { financialCategories, sampleGoals } from '../data/financialGoals'
 import type { GoalInstrument } from '../data/financialGoals'
 
-export default function Goals() {
-  const [goals, setGoals] = useState(sampleGoals)
+interface GoalsProps {
+  assets: any[]
+}
+
+export default function Goals({ assets }: GoalsProps) {
+  // TEK VERİ KAYNAĞI: Assets'tan hedefleri hesapla
+  const [goals, setGoals] = useState(() => {
+    // Mevcut portföy değerini hedef olarak kullan
+    const totalValue = assets.reduce((sum, a) => sum + (a.value || 0), 0)
+    
+    return sampleGoals.map(goal => ({
+      ...goal,
+      currentAmount: goal.category === 'financial-freedom' ? totalValue : goal.currentAmount
+    }))
+  })
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
 
   const getProgress = (current: number, target: number) => {

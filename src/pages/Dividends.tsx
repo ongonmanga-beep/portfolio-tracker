@@ -18,7 +18,7 @@ export default function Dividends({ assets }: DividendsProps) {
   const [portfolioGrowthRate, setPortfolioGrowthRate] = useState(7)
   const [annualContribution, setAnnualContribution] = useState(5000)
 
-  // Temettü ödeyen varlıkları filtrele
+  // TEK VERİ KAYNAĞI: Assets'tan filtrele
   const dividendAssets: AssetWithDividend[] = assets
     .filter(a => a.dividendPerShare && a.dividendPerShare > 0)
     .map(a => ({
@@ -28,7 +28,7 @@ export default function Dividends({ assets }: DividendsProps) {
       price: a.price,
       value: a.value,
       dividendPerShare: a.dividendPerShare,
-      dividendYield: a.dividendYield,
+      dividendYield: a.dividendYield || 0,
       paymentFrequency: a.paymentFrequency || 'yearly',
       dividendGrowthRate: 5
     }))

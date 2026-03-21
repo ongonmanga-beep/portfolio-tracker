@@ -49,31 +49,34 @@ function App() {
     }
   }, [darkMode])
 
+  // TEK VERİ KAYNAĞI: Assets (Varlıklar)
   const [assets, setAssets] = useState(() => {
     try {
       const stored = localStorage.getItem('portfolio_assets_v1')
-      if (stored) return JSON.parse(stored)
+      if (stored) {
+        const loaded = JSON.parse(stored)
+        console.log('Loaded assets from localStorage:', loaded.length, 'items')
+        return loaded
+      }
     } catch (err) {
       console.error('Failed to load assets:', err)
     }
-    return [
-      { name: 'Apple Inc.', symbol: 'AAPL', value: 25400, change: 2.3 },
-      { name: 'Bitcoin', symbol: 'BTC', value: 45000, change: -1.2 },
-      { name: 'Tesla', symbol: 'TSLA', value: 18500, change: 4.5 },
-      { name: 'Ethereum', symbol: 'ETH', value: 22000, change: 0.8 },
-      { name: 'NVIDIA', symbol: 'NVDA', value: 14850.50, change: 3.1 },
-    ]
+    // Boş başla - kullanıcı kendi eklesin
+    return []
   })
 
+  // Portfolio hesaplamaları (Assets'tan)
   const totalValue = assets.reduce((sum: number, a: any) => sum + (a.value || 0), 0)
-  const totalChange = assets.reduce((sum: number, a: any) => sum + ((a.value || 0) * (a.change || 0) / 100), 0)
-  const changePercent = totalValue > 0 ? (totalChange / (totalValue - totalChange)) * 100 : 0
+  const totalCost = assets.reduce((sum: number, a: any) => sum + (a.costBasis || a.value || 0), 0)
+  const totalChange = totalValue - totalCost
+  const changePercent = totalCost > 0 ? (totalChange / totalCost) * 100 : 0
 
   const portfolio = {
     totalValue,
     change: totalChange,
     changePercent,
-    assets: assets
+    assets: assets,
+    count: assets.length
   }
 
   const renderContent = () => {
@@ -87,11 +90,9 @@ function App() {
       case 'dividends':
         return <Dividends assets={assets} />
       case 'goals':
-        return <Goals />
+        return <Goals assets={assets} />
       case 'analysis':
-        return <Analysis />
-      case 'goals':
-        return <Goals />
+        return <Analysis assets={assets} />
       case 'alerts':
         return <Alerts />
       case 'reports':
