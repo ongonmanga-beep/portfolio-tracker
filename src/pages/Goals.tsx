@@ -28,15 +28,15 @@ export default function Goals() {
         </button>
       </header>
 
-      {/* Kategori Özeti */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      {/* Kategori Özeti - Minimal */}
+      <div className="flex flex-wrap gap-2">
         {financialCategories.map(cat => (
           <div
             key={cat.id}
-            className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-blue-500 transition cursor-pointer"
+            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
           >
-            <div className="text-2xl mb-2">{cat.icon}</div>
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-400">{cat.name}</p>
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{cat.name}</span>
           </div>
         ))}
       </div>
@@ -53,17 +53,14 @@ export default function Goals() {
               className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ backgroundColor: `${category.color}20` }}>
-                    {category.icon}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }} />
+                    <h3 className="font-medium">{goal.name}</h3>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{goal.name}</h3>
-                    <p className="text-xs text-gray-500">{category.name}</p>
-                  </div>
+                  <p className="text-xs text-gray-500">{category.name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">İlerleme</p>
                   <p className="text-lg font-semibold">{progress.toFixed(0)}%</p>
                 </div>
               </div>
@@ -125,32 +122,21 @@ export default function Goals() {
         })}
       </div>
 
-      {/* Toplam İstatistikler */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="w-5 h-5" />
-            <span className="text-sm opacity-90">Toplam Hedef</span>
-          </div>
-          <p className="text-2xl font-bold">${goals.reduce((sum, g) => sum + g.targetAmount, 0).toLocaleString()}</p>
+      {/* Toplam İstatistikler - Minimal */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+          <p className="text-xs text-gray-500 mb-1">Hedef</p>
+          <p className="text-lg font-semibold">${(goals.reduce((sum, g) => sum + g.targetAmount, 0) / 1000000).toFixed(1)}M</p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5" />
-            <span className="text-sm opacity-90">Mevcut Birikim</span>
-          </div>
-          <p className="text-2xl font-bold">${goals.reduce((sum, g) => sum + g.currentAmount, 0).toLocaleString()}</p>
+        <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+          <p className="text-xs text-gray-500 mb-1">Birikim</p>
+          <p className="text-lg font-semibold">${(goals.reduce((sum, g) => sum + g.currentAmount, 0) / 1000).toFixed(0)}K</p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-sm opacity-90">Ortalama İlerleme</span>
-          </div>
-          <p className="text-2xl font-bold">
-            {(goals.reduce((sum, g) => sum + getProgress(g.currentAmount, g.targetAmount), 0) / goals.length).toFixed(0)}%
-          </p>
+        <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+          <p className="text-xs text-gray-500 mb-1">İlerleme</p>
+          <p className="text-lg font-semibold">{(goals.reduce((sum, g) => sum + getProgress(g.currentAmount, g.targetAmount), 0) / goals.length).toFixed(0)}%</p>
         </div>
       </div>
     </div>

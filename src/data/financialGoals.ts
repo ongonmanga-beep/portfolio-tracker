@@ -18,18 +18,18 @@ export interface GoalInstrument {
   category: string
 }
 
-// 10 Finansal Kategori
+// 10 Finansal Kategori (Minimal İkonlar)
 export const financialCategories = [
-  { id: 'retirement', name: 'Emeklilik', icon: '👴', color: '#8b5cf6' },
-  { id: 'passive-income', name: 'Pasif Gelir', icon: '💰', color: '#10b981' },
-  { id: 'financial-freedom', name: 'Finansal Özgürlük', icon: '🦅', color: '#3b82f6' },
-  { id: 'emergency-fund', name: 'Acil Fon', icon: '🛡️', color: '#f59e0b' },
-  { id: 'real-estate', name: 'Gayrimenkul', icon: '🏠', color: '#ef4444' },
-  { id: 'education', name: 'Eğitim', icon: '📚', color: '#06b6d4' },
-  { id: 'travel', name: 'Seyahat', icon: '✈️', color: '#14b8a6' },
-  { id: 'health', name: 'Sağlık', icon: '🏥', color: '#ec4899' },
-  { id: 'wealth-building', name: 'Servet Biriktirme', icon: '📈', color: '#6366f1' },
-  { id: 'early-retirement', name: 'Erken Emeklilik (FIRE)', icon: '🔥', color: '#f97316' }
+  { id: 'retirement', name: 'Emeklilik', icon: '●', color: '#8b5cf6' },
+  { id: 'passive-income', name: 'Pasif Gelir', icon: '●', color: '#10b981' },
+  { id: 'financial-freedom', name: 'Finansal Özgürlük', icon: '●', color: '#3b82f6' },
+  { id: 'emergency-fund', name: 'Acil Fon', icon: '●', color: '#f59e0b' },
+  { id: 'real-estate', name: 'Gayrimenkul', icon: '●', color: '#ef4444' },
+  { id: 'education', name: 'Eğitim', icon: '●', color: '#06b6d4' },
+  { id: 'travel', name: 'Seyahat', icon: '●', color: '#14b8a6' },
+  { id: 'health', name: 'Sağlık', icon: '●', color: '#ec4899' },
+  { id: 'wealth-building', name: 'Servet', icon: '●', color: '#6366f1' },
+  { id: 'early-retirement', name: 'FIRE', icon: '●', color: '#f97316' }
 ]
 
 // Her kategori için önerilen yatırım araçları
