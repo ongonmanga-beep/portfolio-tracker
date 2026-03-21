@@ -582,7 +582,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
       setLoading(true)
       setError('')
       try {
-        // Hisse ve ETF için Yahoo Finance
+        // Hisse ve ETF - Yahoo Finance
         if (['stocks', 'etf'].includes(activeTab)) {
           const url = `http://localhost:8080/api/v1/stocks/${form.symbol.toUpperCase()}`
           const response = await fetch(url, { signal: abortController.signal })
@@ -599,7 +599,31 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
             }))
           } else setError('Bulunamadı')
         }
-      } catch (err: any) { if (err.name !== 'AbortError') setError('API bağlantı hatası') }
+        // TEFAS Fonları - Backend API (cache'li, BYF: 30 gün, YAT/EMK: 7 gün)
+        else if (['yat', 'emk', 'byf'].includes(activeTab)) {
+          const fundCategories: Record<string, string> = { 'emk': 'EMK', 'yat': 'YAT', 'byf': 'BYF' }
+          const kind = fundCategories[activeTab]
+          const url = `http://localhost:8080/api/v1/prices/${form.symbol.toUpperCase()}?kind=${kind}`
+          const response = await fetch(url, { signal: abortController.signal })
+          const data = await response.json()
+          if (data.data?.prices?.length > 0) {
+            const latest = data.data.prices[0]
+            setForm(prev => ({
+              ...prev, 
+              name: latest.title || prev.name, 
+              price: (latest.price / usdTryRate).toFixed(6), 
+              category: activeTab 
+            }))
+          } else if (data.data?.cached) {
+            setError('Fon bulunamadı (cache)')
+          } else {
+            setError('Fon bulunamadı')
+          }
+        }
+      } catch (err: any) { 
+        if (err.name === 'AbortError') setError('Zaman aşımı')
+        else setError(err.message || 'API hatası')
+      }
       finally { setLoading(false) }
     }
     const debounceTimer = setTimeout(fetchPrice, 300)
@@ -665,7 +689,7 @@ function AddAssetModal({ onSave, onCancel }: { onSave: (asset: any) => void, onC
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="10" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Fiyat ($) {['stocks', 'etf'].includes(activeTab) ? '(Yahoo Finance)' : '(Manuel)'}</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Fiyat ($) {['stocks', 'etf'].includes(activeTab) ? '(Yahoo Finance)' : ['yat', 'emk', 'byf'].includes(activeTab) ? '(TEFAS)' : '(Manuel)'}</label>
               <input type="number" step="0.000001" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })}
                 readOnly={['stocks', 'etf'].includes(activeTab)}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder="150.00" />

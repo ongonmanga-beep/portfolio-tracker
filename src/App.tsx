@@ -269,7 +269,7 @@ function Dashboard({ portfolio, assets }: { portfolio: any, assets: any[] }) {
       </div>
 
       {allocation.length > 0 ? (
-        <div className="h-[60vh] min-h-[500px] w-full" style={{ overflow: 'visible' }}>
+        <div className="h-[40vh] min-h-[350px] w-full" style={{ overflow: 'visible' }}>
             <ReactECharts
               option={{
                 grid: {
