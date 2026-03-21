@@ -1,73 +1,97 @@
-# React + TypeScript + Vite
+# Portfolio Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern portföy takip uygulaması. Varlıkları yönet, kâr/zarar takip et, temettü gelirlerini izle.
 
-Currently, two official plugins are available:
+## Özellikler
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Varlık Yönetimi**: Hisse, kripto, ETF, yatırım fonu, gayrimenkul, nakit
+- **Otomatik Fiyat Çekme**: 
+  - Hisse & ETF → Yahoo Finance API
+  - TEFAS Fonları → Backend API (tefas-crawler)
+- **Kâr/Zarar Takibi**: Anlık kâr/zarar hesaplama
+- **Temettü Gelirleri**: Aylık/yıllık temettü geliri projeksiyonu
+- **Treemap Görselleştirme**: ECharts ile portföy dağılımı
+- **CSV Import**: TradingView format desteği
+- **LocalStorage**: Veriler tarayıcıda saklanır
 
-## React Compiler
+## Kurulum
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Frontend
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd portfolio-tracker
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Frontend http://localhost:5175 adresinde çalışır.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Backend API
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd portfolio-tracker-api
+
+# Python 3.11 veya 3.12 gerekli (3.14 uyumsuz)
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+python main.py
 ```
+
+API http://localhost:8080 adresinde çalışır.
+
+## Teknolojiler
+
+**Frontend:**
+- React 19 + TypeScript
+- Vite + TailwindCSS 4
+- ECharts (Treemap)
+- Lucide Icons
+
+**Backend:**
+- FastAPI
+- tefas-crawler (TEFAS fon verileri)
+- Pandas
+
+## API Endpoints
+
+```
+GET /health                          - Sağlık kontrolü
+GET /api/v1/stocks/{symbol}          - Hisse fiyatı + temettü (Yahoo Finance)
+GET /api/v1/prices/{symbol}          - Fon fiyat geçmişi (TEFAS)
+GET /api/v1/funds                    - Fon listesi
+GET /api/v1/rates/usd-try            - USD/TRY kuru
+```
+
+## Veri Saklama
+
+Tüm veriler `localStorage`'da saklanır:
+- `portfolio_assets_v1` - Varlık listesi
+
+## Build
+
+```bash
+npm run build
+```
+
+Production dosyaları `dist/` klasörüne oluşturulur.
+
+## Deploy
+
+### Vercel
+
+```bash
+npm run deploy
+```
+
+### GitHub Pages
+
+```bash
+npm run deploy
+```
+
+## Notlar
+
+- **Python 3.14 uyumsuzluğu**: `tefas-crawler` kütüphanesi Python 3.11/3.12 ile çalışır
+- TEFAS API timeout sorunları için Python versiyonunu düşürün
